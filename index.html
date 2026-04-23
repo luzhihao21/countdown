@@ -12,40 +12,45 @@ body {
   color:#1b5e20;
 }
 
-.container {
-  padding:20px;
-}
+.container { padding:20px; }
 
-/* 分类 */
-.section h2 {
-  cursor:pointer;
-  font-size:22px;
-  margin-top:20px;
-}
-
-/* 卡片 */
 .card {
   background: rgba(255,255,255,0.7);
   backdrop-filter: blur(20px);
   border-radius:20px;
-  padding:20px;
+  padding:18px;
   margin:12px 0;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  position: relative;
 }
 
-/* 标题 */
-.title {
-  font-size:20px;
-  margin-bottom:10px;
-}
+.title { font-size:20px; margin-bottom:10px; }
 
-/* ⏱ 时间（放大！） */
+/* 🔥 数字翻页感（关键） */
 .time {
-  font-size:26px;
+  font-size:30px;
   font-weight:bold;
+  display:inline-block;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-/* 按钮 */
+.flip {
+  transform: translateY(-6px) scale(1.05);
+  opacity:0.6;
+}
+
+.btns {
+  position:absolute;
+  right:10px;
+  top:10px;
+}
+
+.btn {
+  font-size:14px;
+  margin-left:6px;
+  cursor:pointer;
+}
+
 .add-btn {
   position: fixed;
   bottom: 25px;
@@ -53,12 +58,11 @@ body {
   width:60px;
   height:60px;
   border-radius:50%;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.85);
   backdrop-filter: blur(15px);
   font-size:30px;
   text-align:center;
   line-height:60px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
 }
 </style>
 </head>
@@ -77,12 +81,7 @@ function save(){
   localStorage.setItem("countdowns",JSON.stringify(data));
 }
 
-function toggleSection(el){
-  let next = el.nextElementSibling;
-  next.style.display = next.style.display==="none"?"block":"none";
-}
-
-/* ✅ 自动解析时间 */
+/* 时间解析 */
 function parseDate(str){
   return new Date(str.replace(/-/g,"/"));
 }
@@ -92,57 +91,72 @@ function format(diff){
   const h=Math.floor((diff/(1000*60*60))%24);
   const m=Math.floor((diff/(1000*60))%60);
   const s=Math.floor((diff/1000)%60);
-  return d+"天 "+h+"时 "+m+"分 "+s+"秒";
+  return {d,h,m,s};
+}
+
+/* ✨ 翻页动画 */
+function animate(el){
+  el.classList.add("flip");
+  setTimeout(()=>el.classList.remove("flip"),200);
 }
 
 function render(){
   const app=document.getElementById("app");
   app.innerHTML="";
 
-  const groups={};
+  data.forEach((item,index)=>{
+    const card=document.createElement("div");
+    card.className="card";
 
-  data.forEach(item=>{
-    if(!groups[item.category]) groups[item.category]=[];
-    groups[item.category].push(item);
+    const now=new Date();
+    const target=parseDate(item.date);
+    const diff=target-now;
+
+    let f = diff<=0 ? {d:0,h:0,m:0,s:0} : format(diff);
+
+    card.innerHTML=`
+      <div class="title">${item.title}</div>
+
+      <div class="time" id="t${index}">
+        ${f.d}天 ${f.h}时 ${f.m}分 ${f.s}秒
+      </div>
+
+      <div class="btns">
+        <span class="btn" onclick="edit(${index})">✏️</span>
+        <span class="btn" onclick="del(${index})">🗑</span>
+      </div>
+    `;
+
+    app.appendChild(card);
   });
-
-  for(let cat in groups){
-    const section=document.createElement("div");
-
-    const title=document.createElement("h2");
-    title.innerText="📂 "+cat;
-    title.onclick=function(){toggleSection(this)};
-    section.appendChild(title);
-
-    const list=document.createElement("div");
-
-    groups[cat].forEach(item=>{
-      const card=document.createElement("div");
-      card.className="card";
-
-      const now=new Date();
-      const target=parseDate(item.date);
-      const diff=target-now;
-
-      let text = diff<=0 ? "已到时间！" : format(diff);
-
-      card.innerHTML=
-        "<div class='title'>"+item.title+"</div>"+
-        "<div class='time'>"+text+"</div>";
-
-      list.appendChild(card);
-    });
-
-    section.appendChild(list);
-    app.appendChild(section);
-  }
 }
+
+/* ⏱ 每秒刷新 + 翻页效果 */
+setInterval(()=>{
+  data.forEach((item,index)=>{
+    const el=document.getElementById("t"+index);
+    if(!el) return;
+
+    const now=new Date();
+    const target=parseDate(item.date);
+    const diff=target-now;
+
+    let f = diff<=0 ? {d:0,h:0,m:0,s:0} : format(diff);
+
+    const text = `${f.d}天 ${f.h}时 ${f.m}分 ${f.s}秒`;
+
+    if(el.innerText !== text){
+      animate(el);
+      el.innerText = text;
+    }
+  });
+},1000);
 
 /* ➕新增 */
 function addItem(){
   const title=prompt("名字？");
-  const date=prompt("日期（例：2026-07-05 12:00）");
-  const category=prompt("分类（学习/生活）");
+  const date=prompt("日期（2026-07-05 12:00）");
+  const category=prompt("分类");
 
   if(title && date && category){
     data.push({title,date,category});
@@ -151,7 +165,28 @@ function addItem(){
   }
 }
 
-setInterval(render,1000);
+/* ✏️编辑 */
+function edit(i){
+  const t = prompt("修改名称",data[i].title);
+  const d = prompt("修改时间",data[i].date);
+  const c = prompt("修改分类",data[i].category);
+
+  if(t && d && c){
+    data[i]={title:t,date:d,category:c};
+    save();
+    render();
+  }
+}
+
+/* 🗑删除 */
+function del(i){
+  if(confirm("删除？")){
+    data.splice(i,1);
+    save();
+    render();
+  }
+}
+
 render();
 </script>
 
