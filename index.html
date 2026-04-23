@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>倒计时</title>
+</head>
+
+<body style="text-align:center; font-family:sans-serif; margin-top:100px;">
+  <h1>倒计时</h1>
+  <h2 id="countdown"></h2>
+
+  <script>
+    // 👉 改成你自己的目标时间
+    const target = new Date("2026-12-31 00:00:00");
+
+    function update() {
+      const now = new Date();
+      const diff = target - now;
+
+      if (diff <= 0) {
+        document.getElementById("countdown").innerText = "时间到了！";
+        return;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((diff / (1000 * 60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+
+      document.getElementById("countdown").innerText =
+        days + "天 " + hours + "小时 " + minutes + "分 " + seconds + "秒";
+    }
+
+    setInterval(update, 1000);
+    update();
+  </script>
+</body>
+</html>
