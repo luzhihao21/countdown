@@ -1,100 +1,136 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>我的倒计时</title>
+<meta charset="UTF-8">
+<title>倒计时</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
-      color: white;
-      text-align: center;
+<style>
+body {
+  margin:0;
+  font-family:"Noto Sans SC",sans-serif;
+  color:white;
+  background: linear-gradient(135deg,#2e7d32,#66bb6a);
+}
 
-      /* 🌿 绿色风景背景 */
-      background: url("https://picsum.photos/800/1600?green,nature") no-repeat center center fixed;
-      background-size: cover;
-    }
+/* iOS卡片风 */
+.container {
+  padding:20px;
+}
 
-    h1 {
-      margin-top: 30px;
-      font-size: 32px;
-    }
+.section {
+  margin-bottom:20px;
+}
 
-    h2 {
-      margin-top: 30px;
-      border-bottom: 1px solid rgba(255,255,255,0.5);
-      display: inline-block;
-      padding-bottom: 5px;
-    }
+.section h2 {
+  cursor:pointer;
+}
 
-    .card {
-      background: rgba(0,0,0,0.4);
-      margin: 15px auto;
-      padding: 15px;
-      width: 80%;
-      border-radius: 10px;
-    }
+.card {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(10px);
+  margin:10px 0;
+  padding:15px;
+  border-radius:15px;
+}
 
-    .title {
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
-
-    .time {
-      font-size: 18px;
-    }
-  </style>
+.add-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background:#4caf50;
+  width:60px;
+  height:60px;
+  border-radius:50%;
+  font-size:30px;
+  text-align:center;
+  line-height:60px;
+}
+</style>
 </head>
 
 <body>
 
-  <h1>倒计时</h1>
+<div class="container" id="app"></div>
 
-  <h2>📚 学习</h2>
+<div class="add-btn" onclick="addItem()">＋</div>
 
-  <div class="card">
-    <div class="title">日语考试</div>
-    <div class="time" id="jp"></div>
-  </div>
+<script>
+let data = JSON.parse(localStorage.getItem("countdowns")) || [
+  {title:"日语考试",date:"2026-07-01",category:"学习"},
+  {title:"开始健身",date:"2026-05-01",category:"生活"}
+];
 
-  <h2>💪 生活</h2>
+function save(){
+  localStorage.setItem("countdowns",JSON.stringify(data));
+}
 
-  <div class="card">
-    <div class="title">开始锻炼</div>
-    <div class="time" id="fitness"></div>
-  </div>
+function toggleSection(el){
+  let next = el.nextElementSibling;
+  next.style.display = next.style.display==="none"?"block":"none";
+}
 
-  <script>
-    const targets = {
-      jp: new Date("2026-07-01 00:00:00"),
-      fitness: new Date("2026-05-01 00:00:00")
-    };
+function render(){
+  const app=document.getElementById("app");
+  app.innerHTML="";
 
-    function update() {
-      const now = new Date();
+  const groups={};
 
-      for (let key in targets) {
-        const diff = targets[key] - now;
+  data.forEach(item=>{
+    if(!groups[item.category]) groups[item.category]=[];
+    groups[item.category].push(item);
+  });
 
-        if (diff <= 0) {
-          document.getElementById(key).innerText = "已到时间！";
-          continue;
-        }
+  for(let cat in groups){
+    const section=document.createElement("div");
+    section.className="section";
 
-        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const m = Math.floor((diff / (1000 * 60)) % 60);
-        const s = Math.floor((diff / 1000) % 60);
+    const title=document.createElement("h2");
+    title.innerText="📂 "+cat;
+    title.onclick=function(){toggleSection(this)};
+    section.appendChild(title);
 
-        document.getElementById(key).innerText =
-          d + "天 " + h + "小时 " + m + "分 " + s + "秒";
+    const list=document.createElement("div");
+
+    groups[cat].forEach(item=>{
+      const card=document.createElement("div");
+      card.className="card";
+
+      const now=new Date();
+      const target=new Date(item.date);
+      const diff=target-now;
+
+      let text="";
+      if(diff<=0){
+        text="已到时间！";
+      }else{
+        const d=Math.floor(diff/(1000*60*60*24));
+        text=d+" 天";
       }
-    }
 
-    setInterval(update, 1000);
-    update();
-  </script>
+      card.innerHTML="<b>"+item.title+"</b><br>"+text;
+      list.appendChild(card);
+    });
+
+    section.appendChild(list);
+    app.appendChild(section);
+  }
+}
+
+function addItem(){
+  const title=prompt("名字？");
+  const date=prompt("日期 (YYYY-MM-DD)");
+  const category=prompt("分类（比如 学习/生活）");
+
+  if(title && date && category){
+    data.push({title,date,category});
+    save();
+    render();
+  }
+}
+
+setInterval(render,1000);
+render();
+</script>
 
 </body>
 </html>
