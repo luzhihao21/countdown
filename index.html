@@ -5,74 +5,83 @@
 <title>倒计时</title>
 
 <style>
-body {
+body{
   margin:0;
   font-family:"Noto Sans SC",sans-serif;
-  background: linear-gradient(135deg,#e8f5e9,#c8e6c9);
+  background: linear-gradient(180deg,#e8f5e9,#c8e6c9);
   color:#1b5e20;
 }
 
-.container { padding:20px; }
-
-.card {
-  background: rgba(255,255,255,0.7);
-  backdrop-filter: blur(20px);
-  border-radius:20px;
-  padding:18px;
-  margin:12px 0;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  position: relative;
+/* 🟢 顶部主卡片（Widget风） */
+.hero{
+  margin:20px;
+  padding:25px;
+  border-radius:25px;
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(25px);
+  box-shadow:0 10px 30px rgba(0,0,0,0.1);
+  text-align:center;
 }
 
-.title { font-size:20px; margin-bottom:10px; }
+.hero-title{
+  font-size:22px;
+  margin-bottom:10px;
+}
 
-/* 🔥 数字翻页感（关键） */
-.time {
-  font-size:30px;
+.hero-time{
+  font-size:42px;
   font-weight:bold;
-  display:inline-block;
-  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
-.flip {
-  transform: translateY(-6px) scale(1.05);
-  opacity:0.6;
+/* 分类 */
+.section{
+  margin:10px 20px;
 }
 
-.btns {
-  position:absolute;
-  right:10px;
-  top:10px;
-}
-
-.btn {
-  font-size:14px;
-  margin-left:6px;
+.section h2{
+  font-size:18px;
   cursor:pointer;
 }
 
-.add-btn {
-  position: fixed;
-  bottom: 25px;
-  right: 25px;
+/* 卡片 */
+.card{
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(15px);
+  border-radius:18px;
+  padding:15px;
+  margin:10px 0;
+}
+
+/* 小字 */
+.small{
+  font-size:20px;
+  font-weight:bold;
+}
+
+/* ➕按钮 */
+.add-btn{
+  position:fixed;
+  bottom:25px;
+  right:25px;
   width:60px;
   height:60px;
   border-radius:50%;
   background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(15px);
-  font-size:30px;
   text-align:center;
   line-height:60px;
+  font-size:30px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container" id="app"></div>
+<div class="hero" id="hero"></div>
+<div id="app"></div>
 <div class="add-btn" onclick="addItem()">＋</div>
 
 <script>
+
 let data = JSON.parse(localStorage.getItem("countdowns")) || [
   {title:"日语考试",date:"2026-07-05 12:00",category:"学习"}
 ];
@@ -81,11 +90,11 @@ function save(){
   localStorage.setItem("countdowns",JSON.stringify(data));
 }
 
-/* 时间解析 */
-function parseDate(str){
-  return new Date(str.replace(/-/g,"/"));
+function parseDate(s){
+  return new Date(s.replace(/-/g,"/"));
 }
 
+/* ⏱ 格式化 */
 function format(diff){
   const d=Math.floor(diff/(1000*60*60*24));
   const h=Math.floor((diff/(1000*60*60))%24);
@@ -94,17 +103,38 @@ function format(diff){
   return {d,h,m,s};
 }
 
-/* ✨ 翻页动画 */
-function animate(el){
-  el.classList.add("flip");
-  setTimeout(()=>el.classList.remove("flip"),200);
+/* 🎨 颜色等级 */
+function getColor(diff){
+  const days = diff/(1000*60*60*24);
+  if(days < 1) return "#e53935";   // 红
+  if(days < 7) return "#fb8c00";   // 橙
+  return "#2e7d32";                // 绿
 }
 
-function render(){
+/* 🟢 主卡片 */
+function renderHero(){
+  let main = data[0];
+  if(!main) return;
+
+  const now=new Date();
+  const target=parseDate(main.date);
+  const diff=target-now;
+  let f = format(diff);
+
+  document.getElementById("hero").innerHTML=`
+    <div class="hero-title">${main.title}</div>
+    <div class="hero-time" style="color:${getColor(diff)}">
+      ${f.d}天 ${f.h}:${f.m}:${f.s}
+    </div>
+  `;
+}
+
+/* 📂 列表 */
+function renderList(){
   const app=document.getElementById("app");
   app.innerHTML="";
 
-  data.forEach((item,index)=>{
+  data.forEach(item=>{
     const card=document.createElement("div");
     card.className="card";
 
@@ -112,18 +142,12 @@ function render(){
     const target=parseDate(item.date);
     const diff=target-now;
 
-    let f = diff<=0 ? {d:0,h:0,m:0,s:0} : format(diff);
+    let f = format(diff);
 
     card.innerHTML=`
-      <div class="title">${item.title}</div>
-
-      <div class="time" id="t${index}">
+      <div>${item.title}</div>
+      <div class="small" style="color:${getColor(diff)}">
         ${f.d}天 ${f.h}时 ${f.m}分 ${f.s}秒
-      </div>
-
-      <div class="btns">
-        <span class="btn" onclick="edit(${index})">✏️</span>
-        <span class="btn" onclick="del(${index})">🗑</span>
       </div>
     `;
 
@@ -131,31 +155,10 @@ function render(){
   });
 }
 
-/* ⏱ 每秒刷新 + 翻页效果 */
-setInterval(()=>{
-  data.forEach((item,index)=>{
-    const el=document.getElementById("t"+index);
-    if(!el) return;
-
-    const now=new Date();
-    const target=parseDate(item.date);
-    const diff=target-now;
-
-    let f = diff<=0 ? {d:0,h:0,m:0,s:0} : format(diff);
-
-    const text = `${f.d}天 ${f.h}时 ${f.m}分 ${f.s}秒`;
-
-    if(el.innerText !== text){
-      animate(el);
-      el.innerText = text;
-    }
-  });
-},1000);
-
-/* ➕新增 */
+/* ➕ */
 function addItem(){
-  const title=prompt("名字？");
-  const date=prompt("日期（2026-07-05 12:00）");
+  const title=prompt("名字");
+  const date=prompt("日期 (2026-07-05 12:00)");
   const category=prompt("分类");
 
   if(title && date && category){
@@ -165,29 +168,15 @@ function addItem(){
   }
 }
 
-/* ✏️编辑 */
-function edit(i){
-  const t = prompt("修改名称",data[i].title);
-  const d = prompt("修改时间",data[i].date);
-  const c = prompt("修改分类",data[i].category);
-
-  if(t && d && c){
-    data[i]={title:t,date:d,category:c};
-    save();
-    render();
-  }
+/* 🔁 主循环 */
+function render(){
+  renderHero();
+  renderList();
 }
 
-/* 🗑删除 */
-function del(i){
-  if(confirm("删除？")){
-    data.splice(i,1);
-    save();
-    render();
-  }
-}
-
+setInterval(render,1000);
 render();
+
 </script>
 
 </body>
