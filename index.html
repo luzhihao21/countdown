@@ -8,42 +8,67 @@
 body {
   margin:0;
   font-family:"Noto Sans SC",sans-serif;
-  color:white;
-  background: linear-gradient(135deg,#2e7d32,#66bb6a);
+
+  /* 🌿 更淡的背景 */
+  background: linear-gradient(135deg,#e8f5e9,#c8e6c9);
+  color:#1b5e20;
 }
 
-/* iOS卡片风 */
+/* 容器 */
 .container {
   padding:20px;
 }
 
-.section {
-  margin-bottom:20px;
-}
-
+/* 分类标题 */
 .section h2 {
   cursor:pointer;
+  font-size:18px;
+  margin-top:20px;
 }
 
+/* 🍏 iOS风卡片 */
 .card {
-  background: rgba(255,255,255,0.15);
-  backdrop-filter: blur(10px);
-  margin:10px 0;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  border-radius:20px;
   padding:15px;
-  border-radius:15px;
+  margin:10px 0;
+
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
+/* 标题 */
+.title {
+  font-size:16px;
+  margin-bottom:8px;
+}
+
+/* 时间 */
+.time {
+  font-size:18px;
+  font-weight:bold;
+}
+
+/* ➕按钮（更像iOS） */
 .add-btn {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
-  background:#4caf50;
-  width:60px;
-  height:60px;
+  bottom: 25px;
+  right: 25px;
+
+  width:55px;
+  height:55px;
   border-radius:50%;
-  font-size:30px;
+
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(15px);
+
+  font-size:28px;
   text-align:center;
-  line-height:60px;
+  line-height:55px;
+
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
 }
 </style>
 </head>
@@ -56,8 +81,8 @@ body {
 
 <script>
 let data = JSON.parse(localStorage.getItem("countdowns")) || [
-  {title:"日语考试",date:"2026-07-01",category:"学习"},
-  {title:"开始健身",date:"2026-05-01",category:"生活"}
+  {title:"日语考试",date:"2026-07-01 00:00:00",category:"学习"},
+  {title:"开始健身",date:"2026-05-01 00:00:00",category:"生活"}
 ];
 
 function save(){
@@ -67,6 +92,14 @@ function save(){
 function toggleSection(el){
   let next = el.nextElementSibling;
   next.style.display = next.style.display==="none"?"block":"none";
+}
+
+function format(diff){
+  const d=Math.floor(diff/(1000*60*60*24));
+  const h=Math.floor((diff/(1000*60*60))%24);
+  const m=Math.floor((diff/(1000*60))%60);
+  const s=Math.floor((diff/1000)%60);
+  return d+"天 "+h+"时 "+m+"分 "+s+"秒";
 }
 
 function render(){
@@ -99,15 +132,12 @@ function render(){
       const target=new Date(item.date);
       const diff=target-now;
 
-      let text="";
-      if(diff<=0){
-        text="已到时间！";
-      }else{
-        const d=Math.floor(diff/(1000*60*60*24));
-        text=d+" 天";
-      }
+      let text = diff<=0 ? "已到时间！" : format(diff);
 
-      card.innerHTML="<b>"+item.title+"</b><br>"+text;
+      card.innerHTML=
+        "<div class='title'>"+item.title+"</div>"+
+        "<div class='time'>"+text+"</div>";
+
       list.appendChild(card);
     });
 
@@ -118,7 +148,7 @@ function render(){
 
 function addItem(){
   const title=prompt("名字？");
-  const date=prompt("日期 (YYYY-MM-DD)");
+  const date=prompt("日期 (YYYY-MM-DD HH:MM:SS)");
   const category=prompt("分类（比如 学习/生活）");
 
   if(title && date && category){
