@@ -2,37 +2,99 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>倒计时</title>
+  <title>我的倒计时</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      color: white;
+      text-align: center;
+
+      /* 🌿 绿色风景背景 */
+      background: url("https://picsum.photos/800/1600?green,nature") no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    h1 {
+      margin-top: 30px;
+      font-size: 32px;
+    }
+
+    h2 {
+      margin-top: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.5);
+      display: inline-block;
+      padding-bottom: 5px;
+    }
+
+    .card {
+      background: rgba(0,0,0,0.4);
+      margin: 15px auto;
+      padding: 15px;
+      width: 80%;
+      border-radius: 10px;
+    }
+
+    .title {
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    .time {
+      font-size: 18px;
+    }
+  </style>
 </head>
 
-<body style="text-align:center; font-family:sans-serif; margin-top:100px;">
+<body>
+
   <h1>倒计时</h1>
-  <h2 id="countdown"></h2>
+
+  <h2>📚 学习</h2>
+
+  <div class="card">
+    <div class="title">日语考试</div>
+    <div class="time" id="jp"></div>
+  </div>
+
+  <h2>💪 生活</h2>
+
+  <div class="card">
+    <div class="title">开始锻炼</div>
+    <div class="time" id="fitness"></div>
+  </div>
 
   <script>
-    // 👉 改成你自己的目标时间
-    const target = new Date("2026-12-31 00:00:00");
+    const targets = {
+      jp: new Date("2026-07-01 00:00:00"),
+      fitness: new Date("2026-05-01 00:00:00")
+    };
 
     function update() {
       const now = new Date();
-      const diff = target - now;
 
-      if (diff <= 0) {
-        document.getElementById("countdown").innerText = "时间到了！";
-        return;
+      for (let key in targets) {
+        const diff = targets[key] - now;
+
+        if (diff <= 0) {
+          document.getElementById(key).innerText = "已到时间！";
+          continue;
+        }
+
+        const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((diff / (1000 * 60)) % 60);
+        const s = Math.floor((diff / 1000) % 60);
+
+        document.getElementById(key).innerText =
+          d + "天 " + h + "小时 " + m + "分 " + s + "秒";
       }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      document.getElementById("countdown").innerText =
-        days + "天 " + hours + "小时 " + minutes + "分 " + seconds + "秒";
     }
 
     setInterval(update, 1000);
     update();
   </script>
+
 </body>
 </html>
